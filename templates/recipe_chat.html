@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriBot: Healthy Recipe & Diet Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='recipe_chat.css') }}">
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <h1>🥗 NutriBot</h1>
+    <p>Your AI companion for healthy recipes & diet plans</p>
+  </div>
+
+  <div id="chat-window" class="chat-window">
+    <div class="bot-message">
+      👋 Hi! I’m <b>NutriBot</b>. Ask me about healthy recipes or diet tips.
+    </div>
+  </div>
+
+  <form id="chat-form" class="chat-input-container">
+    <input type="text" id="user-input" class="chat-input"
+           placeholder="Ask for a recipe or diet tip..." autocomplete="off" />
+    <button type="submit" class="send-button">➤</button>
+  </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ✅ API KEY FROM .env (via Flask)
+  const API_KEY = "{{ api_key }}";
+  const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+  const chatForm = document.getElementById("chat-form");
+  const chatWindow = document.getElementById("chat-window");
+  const userInput = document.getElementById("user-input");
+
+  let conversation = [
+    {
+      role: "system",
+      content: "You are NutriBot, an expert AI nutritionist."
+    }
+  ];
+
+  chatForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    addMessage(message, "user");
+    userInput.value = "";
+
+    conversation.push({ role: "user", content: message });
+    const typing = addTyping();
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${API_KEY}`,
+          "HTTP-Referer": window.location.href,
+          "X-Title": "NutriBot"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-3.5-turbo",
+          messages: conversation
+        })
+      });
+
+      const data = await response.json();
+      typing.remove();
+
+      const reply = data.choices[0].message.content;
+      conversation.push({ role: "assistant", content: reply });
+      addMessage(reply, "bot");
+
+    } catch (err) {
+      typing.remove();
+      addMessage("⚠️ Error contacting NutriBot.", "bot");
+    }
+  });
+
+  function addMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = sender + "-message";
+    div.innerHTML = text;
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function addTyping() {
+    const div = document.createElement("div");
+    div.className = "typing";
+    div.innerText = "NutriBot is thinking...";
+    chatWindow.appendChild(div);
+    return div;
+  }
+});
+</script>
+
+</body>
+</html>

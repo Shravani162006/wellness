@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exercise Selection</title>
+     <link rel="stylesheet" href="{{ url_for('static', filename='exercise.css') }}">
+    
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <h1>💪 Exercise Tracker</h1>
+            <div class="nav-links">
+                <a href="/health">Health Calculator</a>
+                <a href="/exercise_history">Exercise History</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        <h2>Select Your Exercise</h2>
+        <p>Choose an exercise to track with your camera:</p>
+        
+        <div class="exercise-grid">
+            <a href="/exercise/pushups" class="exercise-card">
+                <div class="exercise-icon">🏋️</div>
+                <h3>Pushups</h3>
+                <p>Track your pushup form and count with real-time feedback</p>
+            </a>
+            
+            <a href="/exercise/squats" class="exercise-card">
+                <div class="exercise-icon">🦵</div>
+                <h3>Squats</h3>
+                <p>Monitor squat depth and count with pose detection</p>
+            </a>
+            
+            <a href="/exercise/bicep_curls" class="exercise-card">
+                <div class="exercise-icon">💪</div>
+                <h3>Bicep Curls</h3>
+                <p>Track arm exercises with proper form monitoring</p>
+            </a>
+            <!-- Add this to your exercise-grid in exercise.html -->
+<a href="/exercise/hand_workout" class="exercise-card">
+    <div class="exercise-icon">✋</div>
+    <h3>Hand Workout</h3>
+    <p>Track hand open/close exercises with gesture recognition</p>
+</a>
+        </div>
+    </div>
+</body>
+</html>

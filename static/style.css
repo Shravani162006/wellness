@@ -1,0 +1,290 @@
+/* ------------------------------------
+   🌿 GLOBAL STYLES
+------------------------------------- */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f5eaff;
+    color: #333;
+    text-align: center;
+    padding: 40px;
+    margin: 0;
+}
+
+a {
+    color: #a64ca6;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 10px 5px;
+    font-size: 16px;
+    background-color: #a64ca6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #833c83;
+}
+
+input, select {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.error {
+    color: red;
+}
+
+
+/* ------------------------------------
+   🔐 LOGIN & SIGNUP BOX
+------------------------------------- */
+.box {
+    background: white;
+    padding: 30px;
+    margin: auto;
+    width: 300px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px #aaa;
+}
+
+
+/* ------------------------------------
+   📊 HEALTH REPORT BOX
+------------------------------------- */
+.result-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    width: 500px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+
+/* ------------------------------------
+   📘 REPORT TABLES
+------------------------------------- */
+.result-container {
+    max-width: 700px;
+    margin: auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(166, 76, 166, 0.2);
+}
+
+.result-container h2 {
+    color: #a64ca6;
+    margin-bottom: 25px;
+}
+
+.result-table,
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fefeff;
+    margin-bottom: 30px;
+}
+
+.result-table th,
+.result-table td,
+table th,
+table td {
+    padding: 12px 20px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-size: 15px;
+}
+
+.result-table th,
+table th {
+    background-color: #ffe6f0;
+    color: #4b2c63;
+    font-weight: bold;
+}
+
+
+/* ------------------------------------
+   🧾 HISTORY TABLE CONTAINER
+------------------------------------- */
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+}
+
+.container h2 {
+    color: #4b2c63;
+    margin-bottom: 20px;
+}
+
+
+/* ------------------------------------
+   🔓 LOGOUT SECTION
+------------------------------------- */
+.logout-link {
+    margin-top: 20px;
+}
+
+.logout-link a {
+    color: #4b2c63;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+
+/* ------------------------------------
+   🎯 BUTTON GROUPS
+------------------------------------- */
+.button-box,
+.button-container {
+    margin-top: 20px;
+}
+
+.custom-btn {
+    background-color: #a64ca6;
+    color: white;
+    padding: 12px 20px;
+    margin: 10px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.custom-btn:hover {
+    background-color: #833c83;
+}
+
+
+/* ------------------------------------
+   📹 EXERCISE VIDEO SECTION
+------------------------------------- */
+.video-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.video-block {
+    text-align: center;
+}
+
+.video-container iframe {
+    width: 90%;
+    max-width: 560px;
+    height: 315px;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.caption {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+
+/* ------------------------------------
+   🔙 BACK BUTTON
+------------------------------------- */
+.back-btn {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.back-btn button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.back-btn button:hover {
+    background-color: #45a049;
+}
+
+
+/* ------------------------------------
+   📱 RESPONSIVE (Mobile)
+------------------------------------- */
+@media (max-width: 768px) {
+    .result-box,
+    .result-container,
+    .container {
+        width: 90%;
+        padding: 20px;
+    }
+
+    table th,
+    table td {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    button {
+        width: 90%;
+        margin-bottom: 10px;
+    }
+
+    .video-container iframe {
+        height: 200px;
+    }
+}
+.recipe-button {
+  background-color: #7b2cbf;
+  color: white;
+  padding: 12px 25px;
+  font-size: 16px;
+  margin-top: 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.recipe-button:hover {
+  background-color: #5a189a;
+}
+.btn-purple {
+  background-color: #9b4dca;
+  color: white;
+  padding: 10px 18px;
+  text-decoration: none;
+  border-radius: 8px;
+  margin: 6px;
+  display: inline-block;
+  font-weight: bold;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-purple:hover {
+  background-color: #7a34aa;
+  transform: scale(1.05);
+}

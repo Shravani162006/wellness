@@ -1,0 +1,18 @@
+[
+    {
+        "date": "2025-12-23 13:30",
+        "gender": "female",
+        "age": 55,
+        "height": 166.0,
+        "weight": 66.0,
+        "bmi": 23.95,
+        "bmr": 1261.5,
+        "tsf": 24.66,
+        "vf": "Normal",
+        "mm": 27.06,
+        "ideal_weight": 59.8,
+        "suggestion": "Lose Weight",
+        "bmi_category": "Overweight",
+        "health_effects": "Fatigue, Digestive problems, Circulation issues, Varicose veins"
+    }
+]

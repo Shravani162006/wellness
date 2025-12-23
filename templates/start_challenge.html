@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Challenge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h2>🏆 Create New Challenge</h2>
+
+    {% if message %}
+    <p class="success-message">{{ message }}</p>
+    {% endif %}
+
+    <form method="POST">
+        <label for="challenge_name">Challenge Name</label>
+        <input type="text" id="challenge_name" name="challenge_name" required>
+
+        <label for="start_date">Start Date</label>
+        <input type="date" id="start_date" name="start_date" required>
+
+        <label for="end_date">End Date</label>
+        <input type="date" id="end_date" name="end_date" required>
+
+        <label for="total_days">Total Days</label>
+        <input type="number" id="total_days" name="total_days" min="1" required>
+
+        <label for="goal_type">Goal Type</label>
+        <select id="goal_type" name="goal_type" required>
+            <option value="">-- Select Goal --</option>
+            <option value="Weight Loss">Weight Loss</option>
+            <option value="Weight Gain">Weight Gain</option>
+            <option value="Fitness Boost">Fitness Boost</option>
+            <option value="Hydration Hero">Hydration Hero</option>
+            <option value="Sleep Improvement">Sleep Improvement</option>
+        </select>
+
+        <label for="weight_target_change">Weight Target Change (kg)</label>
+        <input type="number" step="0.1" id="weight_target_change" name="weight_target_change">
+
+        <label for="exercise_per_day">Exercise Per Day (minutes)</label>
+        <input type="number" id="exercise_per_day" name="exercise_per_day">
+
+        <label for="water_target_liters">Water Target (liters)</label>
+        <input type="number" step="0.1" id="water_target_liters" name="water_target_liters">
+
+        <label for="sleep_target_hours">Sleep Target (hours)</label>
+        <input type="number" step="0.1" id="sleep_target_hours" name="sleep_target_hours">
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+
+        <button type="submit">Create Challenge</button>
+    </form>
+
+    <a href="{{ url_for('welcome') }}" class="back-link">⬅ Back to Home</a>
+</body>
+</html>

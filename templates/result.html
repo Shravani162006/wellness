@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Health Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="result-box">
+    <h2>🌿 Your Health Report 🌿</h2>
+
+    <table class="result-table">
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>💪 BMI (Body Mass Index)</td><td>{{ bmi }}</td></tr>
+        <tr><td>🩺 BMI Category</td><td>{{ bmi_category }}</td></tr>
+        <tr><td>🧾 Health Effects</td><td>{{ health_effects }}</td></tr>
+        <tr><td>🔥 BMR (Basal Metabolic Rate)</td><td>{{ bmr }}</td></tr>
+        <tr><td>📏 TSF (Triceps Skinfold)</td><td>{{ tsf }}</td></tr>
+        <tr><td>🧠 VF (Visceral Fat)</td><td>{{ vf }}</td></tr>
+        <tr><td>💪 MM (Muscle Mass)</td><td>{{ mm }}</td></tr>
+        <tr><td>🎯 Ideal Weight</td><td>{{ ideal_weight }} kg</td></tr>
+        <tr><td>📌 Suggestion</td><td><strong>{{ suggestion }}</strong></td></tr>
+        
+    </table>
+
+    <div class="button-box">
+    <a href="{{ url_for('health_info') }}"><button>📘 Health Info</button></a>
+    <a href="{{ url_for('diet_plan') }}"><button>🥗 Diet Plan</button></a>
+    <a href="{{ url_for('exercise') }}"><button>🏃‍♀️ Exercise</button></a>
+    <a href="{{ url_for('history') }}"><button>📜 View History</button></a>
+    <a href="{{ url_for('recipes') }}"><button>🍲 Recipes</button></a>
+    <a href="{{ url_for('challenge') }}"><button>🏆 Challenge</button></a>
+</div>
+
+
+
+    <div class="logout-link">
+        <a href="{{ url_for('logout') }}">🔓 Logout</a>
+    
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Health History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="container">
+    <h2>📜 Your Previous Health Records</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Gender</th>
+                <th>Age</th>
+                <th>Height</th>
+                <th>Weight</th>
+                <th>BMI</th>
+                <th>BMR</th>
+                <th>TSF</th>
+                <th>VF</th>
+                <th>MM</th>
+                <th>Suggestion</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in records %}
+        <tr>
+            <td>{{ row.date }}</td>
+
+            <td>{{ row['gender'] }}</td>
+            <td>{{ row['age'] }}</td>
+            <td>{{ row['height'] }}</td>
+            <td>{{ row['weight'] }}</td>
+            <td>{{ row['bmi'] }}</td>
+            <td>{{ row['bmr'] }}</td>
+            <td>{{ row['tsf'] }}</td>
+            <td>{{ row['vf'] }}</td>
+            <td>{{ row['mm'] }}</td>
+            <td>{{ row['suggestion'] }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{{ url_for('download_history') }}" target="_blank">
+
+
+        <button>📄 Download History PDF</button>
+    </a>
+    <a href="{{ url_for('health') }}"><button>🔙 Back</button></a>
+</div>
+</body>
+</html>

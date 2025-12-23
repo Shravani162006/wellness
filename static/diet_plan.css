@@ -1,0 +1,128 @@
+/* ------------------------------------
+   🌿 GLOBAL STYLES (MATCH YOUR APP)
+------------------------------------- */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f5eaff;
+    color: #333;
+    padding: 40px;
+    margin: 0;
+}
+
+/* ------------------------------------
+   📦 MAIN CONTAINER
+------------------------------------- */
+.container {
+    max-width: 900px;
+    margin: auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(166, 76, 166, 0.25);
+}
+
+/* ------------------------------------
+   🧠 TITLE
+------------------------------------- */
+h1 {
+    text-align: center;
+    color: #4b2c63;
+    margin-bottom: 25px;
+}
+
+/* ------------------------------------
+   📊 HEALTH REPORT BOX
+------------------------------------- */
+.report {
+    background: #fff0fa;
+    border-radius: 12px;
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    box-shadow: inset 0 0 8px rgba(166, 76, 166, 0.15);
+}
+
+.report p {
+    margin: 8px 0;
+    font-size: 15px;
+}
+
+.report span {
+    font-weight: bold;
+    color: #833c83;
+}
+
+/* ------------------------------------
+   🎯 GENERATE BUTTON
+------------------------------------- */
+.generate-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background-color: #a64ca6;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.generate-btn:hover {
+    background-color: #833c83;
+}
+
+/* ------------------------------------
+   ⏳ LOADING TEXT
+------------------------------------- */
+.loading {
+    display: none;
+    margin-top: 20px;
+    text-align: center;
+    font-style: italic;
+    color: #6b4a7a;
+}
+
+/* ------------------------------------
+   🥗 DIET RESULT OUTPUT
+------------------------------------- */
+.diet-result {
+    display: none;
+    background: #ffffff;
+    margin-top: 30px;
+    padding: 25px 30px;
+    border-radius: 14px;
+    line-height: 1.8;
+    font-size: 15px;
+    color: #333;
+    box-shadow: 0 0 12px rgba(166, 76, 166, 0.2);
+}
+
+/* Headings like **Day 1**, **Breakfast** */
+.diet-result strong {
+    color: #7a34aa;
+    display: block;
+    margin-top: 18px;
+    font-size: 16px;
+}
+
+/* ------------------------------------
+   📱 RESPONSIVE
+------------------------------------- */
+@media (max-width: 768px) {
+    body {
+        padding: 20px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    .report p,
+    .diet-result {
+        font-size: 14px;
+    }
+
+    .generate-btn {
+        font-size: 15px;
+    }
+}

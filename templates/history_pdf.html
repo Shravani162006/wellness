@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Health History PDF</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
+
+</head>
+<body>
+
+<h2>📜 Your Health Record History</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>BMI</th>
+            <th>BMR</th>
+            <th>TSF</th>
+            <th>VF</th>
+            <th>MM</th>
+            <th>Category</th>
+            <th>Suggestion</th>
+            <th>Health Effects</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for row in records %}
+        <tr>
+            <td>{{ row.date }}</td>
+            <td>{{ row.bmi }}</td>
+            <td>{{ row.bmr }}</td>
+            <td>{{ row.tsf }}</td>
+            <td>{{ row.vf }}</td>
+            <td>{{ row.mm }}</td>
+            <td>{{ row.bmi_category }}</td>
+            <td>{{ row.suggestion }}</td>
+            <td>{{ row.health_effects }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>
+

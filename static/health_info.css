@@ -1,0 +1,57 @@
+/* ------------------------------------
+   🌿 UPDATED BODY STYLE
+------------------------------------- */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--light-bg);
+    padding: 20px;
+    color: var(--secondary-color);
+}
+
+/* ------------------------------------
+   🏷 HEADERS
+------------------------------------- */
+h2 {
+    color: var(--primary-color);
+    font-size: 26px;
+    margin-bottom: 20px;
+}
+
+/* ------------------------------------
+   📊 TABLE LAYOUT
+------------------------------------- */
+.table-container {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+/* Main table style */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    overflow: hidden; 
+    box-shadow: 0 2px 6px var(--shadow-light);
+}
+
+/* Table cells */
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 12px 14px;
+    text-align: left;
+}
+
+/* Header styling */
+th {
+    background-color: rgba(166, 76, 166, 0.15); /* light purple */
+    font-weight: bold;
+    color: var(--secondary-color);
+}
+
+/* Even row background */
+tr:nth-child(even) {
+    background-color: #faf5ff; /* VERY soft purple tone */
+}

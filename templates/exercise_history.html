@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exercise History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='exercise_history.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <h1>📊 Exercise History</h1>
+            <div class="nav-links">
+                <a href="/exercise">← Back to Exercises</a>
+                <a href="/health">Health Calculator</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        {% if records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Exercise Type</th>
+                    <th>Reps</th>
+                    <th>Workout Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>
+                        <span class="exercise-badge {{ record.exercise_type }}">
+                            {{ record.exercise_type.replace('_', ' ').title() }}
+                        </span>
+                    </td>
+                    <td><strong>{{ record.reps }}</strong> reps</td>
+                    <td>
+                        {{ record.date }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Summary Statistics -->
+        <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px;">
+            <h3>📈 Workout Summary</h3>
+            <p><strong>Total Workouts:</strong> {{ records|length }}</p>
+            <p><strong>Total Reps:</strong> {{ records|sum(attribute='reps') }}</p>
+            <p><strong>Most Recent:</strong> {{ records[0].date }}</p>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h2>No Exercise Records Found</h2>
+            <p>You haven't recorded any exercises yet.</p>
+            <p>Start tracking your workouts to see your progress here!</p>
+            <a href="/exercise" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px;">
+                Start Exercising
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

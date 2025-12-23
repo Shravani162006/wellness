@@ -1,0 +1,204 @@
+/* -----------------------------------------------------
+   🌸 GLOBAL PAGE STYLE
+------------------------------------------------------ */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f5eaff;
+    margin: 0;
+    padding: 40px 0;
+    color: #333;
+}
+
+
+/* -----------------------------------------------------
+   🌸 MAIN CONTAINER
+------------------------------------------------------ */
+.container {
+    max-width: 1100px;
+    margin: auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(166, 76, 166, 0.25);
+}
+
+
+/* -----------------------------------------------------
+   🌸 NAVIGATION BAR
+------------------------------------------------------ */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffe6f9;
+    padding: 18px 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 10px rgba(166, 76, 166, 0.2);
+}
+
+.nav-bar h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #a64ca6;
+}
+
+.nav-links a {
+    margin-left: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #4b2c63;
+    transition: 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #a64ca6;
+}
+
+
+/* -----------------------------------------------------
+   🎥 VIDEO + CANVAS (THEMED)
+------------------------------------------------------ */
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    margin: 25px auto;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 0 15px rgba(166, 76, 166, 0.25);
+}
+
+#webcam {
+    width: 100%;
+    height: auto;
+    transform: scaleX(-1);
+    border-radius: 15px;
+    background: #000;
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    pointer-events: none;
+}
+
+
+/* -----------------------------------------------------
+   📊 EXERCISE STATS
+------------------------------------------------------ */
+.stats {
+    margin-top: 30px;
+    text-align: center;
+    padding: 22px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(166, 76, 166, 0.15);
+}
+
+.counter {
+    font-size: 32px;
+    font-weight: bold;
+    color: #a64ca6;
+    margin: 10px 0;
+}
+
+.feedback {
+    margin-top: 12px;
+    font-weight: 600;
+    color: #4b2c63;
+}
+
+#state-display {
+    font-weight: bold;
+    color: #7a34aa;
+}
+
+
+/* -----------------------------------------------------
+   ✋ HAND STATES
+------------------------------------------------------ */
+.hand-states {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin: 20px 0;
+}
+
+.hand-state {
+    padding: 10px 22px;
+    background-color: #ffe6f0;
+    border-radius: 25px;
+    font-weight: bold;
+    color: #4b2c63;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+
+/* -----------------------------------------------------
+   🔘 BUTTON CONTROLS
+------------------------------------------------------ */
+.controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.controls button {
+    background-color: #a64ca6;
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s ease;
+    box-shadow: 0 4px 10px rgba(166, 76, 166, 0.25);
+}
+
+.controls button:hover {
+    background-color: #833c83;
+}
+
+.controls button:disabled {
+    background-color: #c9a3cf;
+    cursor: not-allowed;
+}
+
+
+/* -----------------------------------------------------
+   📱 MOBILE RESPONSIVE
+------------------------------------------------------ */
+@media (max-width: 768px) {
+    .container {
+        width: 92%;
+        padding: 20px;
+    }
+
+    .nav-bar {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .controls button {
+        width: 100%;
+    }
+
+    .video-container {
+        max-width: 100%;
+    }
+}

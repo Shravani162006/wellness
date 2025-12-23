@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personalized Diet Plan | Wellora</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='diet_plan.css') }}">
+</head>
+
+<body>
+  <div class="container">
+    <h1>🍽 Personalized Diet Plan</h1>
+
+    <!-- Health Report -->
+    <div class="report" id="health-report">
+      <p><span>💪 BMI:</span> 29.34</p>
+      <p><span>🩺 BMI Category:</span> Obesity Grade 2</p>
+      <p><span>🧾 Health Effects:</span> Diabetes, Cancer, Arthritis, Arteriosclerosis, Heart Attacks</p>
+      <p><span>🔥 BMR:</span> 1511.5</p>
+      <p><span>📏 TSF:</span> 25.67</p>
+      <p><span>🧠 VF:</span> High</p>
+      <p><span>💪 MM:</span> 31.57</p>
+      <p><span>🎯 Ideal Weight:</span> 56.95 kg</p>
+      <p><span>📌 Suggestion:</span> Lose Weight</p>
+    </div>
+
+    <!-- Button -->
+    <button class="generate-btn" id="generate-diet">🥗 Generate Diet Plan</button>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">Generating your personalized diet plan...</div>
+
+    <!-- Result -->
+    <div class="diet-result" id="diet-result"></div>
+  </div>
+
+  <script>
+    function formatDiet(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br>");
+    }
+
+    document.getElementById("generate-diet").addEventListener("click", async () => {
+      const reportText = document.getElementById("health-report").innerText.trim();
+      const resultDiv = document.getElementById("diet-result");
+      const loading = document.getElementById("loading");
+
+      resultDiv.style.display = "none";
+      loading.style.display = "block";
+      resultDiv.innerHTML = "";
+
+      try {
+        const response = await fetch("/generate_diet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ report: reportText })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.choices) {
+          throw new Error("AI response error");
+        }
+
+        resultDiv.innerHTML = formatDiet(data.choices[0].message.content);
+        resultDiv.style.display = "block";
+      } catch (error) {
+        resultDiv.innerHTML = "⚠️ Unable to generate diet plan. Please try again later.";
+        resultDiv.style.display = "block";
+      } finally {
+        loading.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>

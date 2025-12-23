@@ -1,0 +1,107 @@
+:root {
+  --primary-color: #a64ca6;
+  --primary-dark: #833c83;
+  --secondary-color: #4b2c63;
+  --light-bg: #f5eaff;
+  --white: #ffffff;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+  --border-radius: 12px;
+  --transition-speed: 0.3s;
+}
+
+/* ----- GLOBAL ----- */
+body {
+  font-family: Arial, sans-serif;
+  background: var(--light-bg);
+  margin: 0;
+  padding: 20px;
+  color: var(--secondary-color);
+  text-align: center;
+}
+
+h2 {
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 16px;
+}
+
+/* ----- VIDEO ----- */
+#webcam {
+  width: 90%;
+  max-width: 500px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px var(--shadow-light);
+  margin: 15px 0;
+}
+
+/* ----- INPUT FIELD ----- */
+input[type="number"] {
+  padding: 12px;
+  width: 220px;
+  border-radius: var(--border-radius);
+  border: 2px solid var(--primary-color);
+  font-size: 16px;
+  outline: none;
+  transition: border var(--transition-speed);
+  background: var(--white);
+}
+
+input[type="number"]:focus {
+  border-color: var(--primary-dark);
+}
+
+/* ----- RESULT TEXT ----- */
+#result {
+  font-size: 18px;
+  font-weight: bold;
+  background: var(--white);
+  padding: 12px;
+  width: fit-content;
+  margin: 15px auto;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 10px var(--shadow-light);
+  color: var(--secondary-color);
+}
+
+#height {
+  color: var(--primary-dark);
+}
+
+/* ----- BUTTON ----- */
+#captureBtn {
+  padding: 12px 22px;
+  background: var(--primary-color);
+  color: var(--white);
+  font-size: 16px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background var(--transition-speed), transform var(--transition-speed);
+  box-shadow: 0 4px 10px var(--shadow-medium);
+}
+
+#captureBtn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+/* ----- BACK BUTTON / LINK ----- */
+.back-btn {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 10px 16px;
+  background: var(--secondary-color);
+  color: var(--white);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  transition: background var(--transition-speed), transform var(--transition-speed);
+}
+
+.back-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}

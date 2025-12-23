@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Measure Your Height</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='meansure_height.css') }}">
+
+  
+</head>
+
+<body>
+
+  <h2>🧙 Measure Your Height</h2>
+  <p>Stand straight and ensure your full body is visible.</p>
+
+  <video id="webcam" autoplay playsinline></video>
+
+  <p>Enter your distance from the camera (cm):</p>
+  <input id="distance" type="number" placeholder="e.g., 200">
+
+  <p id="result">
+    Estimated Height: <span id="height">---</span> cm
+  </p>
+
+  <button id="captureBtn">🎥 Capture</button>
+  <br>
+  <a href="/health" class="back-btn">← Back to Health</a>
+
+  <!-- MediaPipe Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+
+<script>
+const video = document.getElementById('webcam');
+const heightDisplay = document.getElementById('height');
+let doCapture = false;
+
+// Start webcam
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => { video.srcObject = stream; })
+  .catch(err => console.error("Camera error:", err));
+
+// Setup MediaPipe Pose
+const pose = new Pose({
+  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+});
+
+pose.setOptions({
+  modelComplexity: 1,
+  smoothLandmarks: true,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
+});
+
+pose.onResults(onResults);
+
+// Webcam processing
+const cam = new Camera(video, {
+  onFrame: async () => await pose.send({ image: video }),
+  width: 640,
+  height: 480
+});
+cam.start();
+
+// Capture button
+document.getElementById("captureBtn").onclick = () => {
+  doCapture = true;
+};
+
+// Processing the results
+function onResults(results) {
+  if (!results.poseLandmarks || !doCapture) return;
+
+  const lm = results.poseLandmarks;
+
+  const headY = lm[0].y;  // Nose
+  const leftAnkleY = lm[27].y;
+  const rightAnkleY = lm[28].y;
+  const feetY = Math.max(leftAnkleY, rightAnkleY);
+
+  if (feetY <= headY) return; // invalid detection
+
+  const personNormHeight = feetY - headY;
+
+  const pixelHeight = personNormHeight * video.videoHeight;
+
+  // User distance (cm)
+  const D = parseFloat(document.getElementById("distance").value);
+  if (!D || D < 50 || D > 500) {
+    alert("Please enter a valid distance between 50–500 cm.");
+    doCapture = false;
+    return;
+  }
+
+  // Webcam focal length approximation
+  const focal = 700;
+
+  const realHeight = Math.round((pixelHeight * D) / focal);
+
+  heightDisplay.innerText = realHeight;
+
+  // 🚀 Redirect back to the health page with height parameter
+  window.location.href = `/health?height=${realHeight}`;
+
+  doCapture = false;
+}
+</script>
+
+</body>
+</html>

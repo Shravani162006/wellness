@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Challenge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="result-box">
+    <h2>🏆 Create a Challenge</h2>
+
+    <form method="POST" class="challenge-form">
+        <label>Challenge Name:</label>
+        <input type="text" name="challenge_name" required>
+
+        <label>Goal:</label>
+        <input type="text" name="goal" required>
+
+        <label>Start Date:</label>
+        <input type="date" name="start_date" required>
+
+        <label>End Date:</label>
+        <input type="date" name="end_date" required>
+
+        <label>Total Days:</label>
+        <input type="number" name="total_days" required>
+
+        <button type="submit">Save Challenge</button>
+    </form>
+
+    <h3>📜 Challenge History</h3>
+
+    {% if challenges %}
+    <table class="result-table">
+        <tr>
+            <th>Name</th>
+            <th>Goal</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Total Days</th>
+        </tr>
+
+        {% for c in challenges %}
+        <tr>
+            <td>{{ c.challenge_name }}</td>
+            <td>{{ c.goal }}</td>
+            <td>{{ c.start_date }}</td>
+            <td>{{ c.end_date }}</td>
+            <td>{{ c.total_days }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>No challenges added yet.</p>
+    {% endif %}
+
+</div>
+
+<div class="logout-link">
+    <a href="{{ url_for('logout') }}">🔓 Logout</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,163 @@
+
+/* ------------------------------------
+   🌸 GLOBAL PAGE STYLING
+------------------------------------- */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5eaff;
+  margin: 0;
+  padding: 40px 0;
+  color: #333;
+  display: flex;
+  justify-content: center;
+}
+
+/* ------------------------------------
+   🟪 MAIN CHAT CONTAINER
+------------------------------------- */
+.chat-container {
+  width: 480px;
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 0 18px rgba(166, 76, 166, 0.25);
+}
+
+/* ------------------------------------
+   🟣 HEADER
+------------------------------------- */
+.chat-header {
+  text-align: center;
+  background: #ffe6f9;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  color: #a64ca6;
+  box-shadow: 0 0 12px rgba(166, 76, 166, 0.15);
+}
+
+.chat-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.chat-header p {
+  margin: 5px 0 0;
+  color: #4b2c63;
+  font-size: 14px;
+}
+
+/* ------------------------------------
+   💬 CHAT WINDOW
+------------------------------------- */
+.chat-window {
+  height: 420px;
+  overflow-y: auto;
+  background: #faf3ff;
+  padding: 15px;
+  border: 2px solid #ebd6ff;
+  border-radius: 14px;
+  box-shadow: inset 0 0 10px rgba(166, 76, 166, 0.1);
+  margin-bottom: 20px;
+}
+
+/* Scrollbar */
+.chat-window::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-window::-webkit-scrollbar-thumb {
+  background: #d6b3ff;
+  border-radius: 8px;
+}
+
+/* ------------------------------------
+   💭 MESSAGES
+------------------------------------- */
+.message {
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  border-radius: 14px;
+  max-width: 85%;
+}
+
+/* User message */
+.user-message {
+  background: #f2e6ff;
+  color: #4b2c63;
+  margin-left: auto;
+  border: 1px solid #d9b3ff;
+  box-shadow: 0 0 10px rgba(166, 76, 166, 0.15);
+}
+
+/* Bot message */
+.bot-message {
+  background: #ffeaff;
+  color: #6a3f7a;
+  border-left: 5px solid #a64ca6;
+  box-shadow: 0 0 10px rgba(166, 76, 166, 0.15);
+}
+
+/* NutriBot thinking */
+.typing-indicator {
+  font-style: italic;
+  font-size: 13px;
+  color: #7a34aa;
+  padding: 10px;
+}
+
+/* ------------------------------------
+   ⌨ INPUT BAR
+------------------------------------- */
+.chat-input-container {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #d4b7ff;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s ease;
+}
+
+.chat-input:focus {
+  border-color: #a64ca6;
+  box-shadow: 0 0 6px rgba(166, 76, 166, 0.4);
+}
+
+.send-button {
+  background: #a64ca6;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+  font-size: 18px;
+  transition: 0.25s ease;
+  box-shadow: 0 4px 10px rgba(166, 76, 166, 0.2);
+}
+
+.send-button:hover {
+  background: #833c83;
+}
+
+/* ------------------------------------
+   📱 RESPONSIVE
+------------------------------------- */
+@media (max-width: 600px) {
+  .chat-container {
+    width: 92%;
+    padding: 18px;
+  }
+
+  .chat-header h1 {
+    font-size: 24px;
+  }
+}
+
