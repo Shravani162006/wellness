@@ -5,7 +5,8 @@ import os
 import uuid
 import json
 import cv2
-import mediapipe as mp
+from mediapipe import solutions
+
 import numpy as np
 import base64
 from flask import Flask, render_template, request, jsonify
@@ -52,9 +53,13 @@ def save_history(username, history):
 # ======================
 # MediaPipe Setup
 # ======================
-mp_pose = mp.solutions.pose
+mp_pose = solutions.pose
+mp_drawing = solutions.drawing_utils
+
+pose = mp_pose.Pose()
+
 mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
+
 mp_drawing_styles = mp.solutions.drawing_styles
 
 # ======================
