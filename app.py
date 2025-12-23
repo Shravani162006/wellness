@@ -54,10 +54,16 @@ def save_history(username, history):
 # ======================
 # MediaPipe Setup
 # ======================
+# ======================
+# MediaPipe Setup
+# ======================
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
+
+pose = mp_pose.Pose()
+
 
 
 # ======================
