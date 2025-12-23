@@ -29,11 +29,14 @@ USER_DATA_FOLDER = "user_data"
 os.makedirs(USER_DATA_FOLDER, exist_ok=True)
 
 # ----------------------
-# Mediapipe imports (latest version)
+# Mediapipe imports
 # ----------------------
-from mediapipe.python.solutions.pose import Pose, POSE_CONNECTIONS
-from mediapipe.python.solutions.hands import Hands
-from mediapipe.python.solutions.drawing_utils import draw_landmarks, get_default_hand_landmarks_style, get_default_hand_connections_style
+import mediapipe as mp
+
+mp_pose = mp.solutions.pose
+mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
 
 # ----------------------
 # Exercise tracking (in-memory)
@@ -44,7 +47,7 @@ exercise_states = {}
 # PDFKit configuration
 # ----------------------
 config = pdfkit.configuration(
-    wkhtmltopdf=os.getenv("WKHTMLTOPDF_PATH", "/usr/local/bin/wkhtmltopdf")
+    wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
 )
 
 # ======================
@@ -64,6 +67,22 @@ def save_history(username, history):
     filepath = get_user_file(username)
     with open(filepath, "w") as f:
         json.dump(history, f, indent=4)
+
+# ======================
+# Exercise Counting Stubs
+# ======================
+def count_exercise_reps(pose_landmarks, exercise_type, username):
+    reps = 0
+    feedback = f"{exercise_type} counting not implemented yet."
+    state = "none"
+    return reps, feedback, state
+
+def count_hand_reps(hand_landmarks_list, handedness_list, username):
+    reps = 0
+    feedback = "Hand exercise counting not implemented yet."
+    state = "none"
+    hand_states = {hand: "unknown" for hand in handedness_list}
+    return reps, feedback, state, hand_states
 
 # ======================
 # AUTH ROUTES
@@ -138,7 +157,6 @@ def health():
         else:
             vf = "Very High"
 
-        # BMI category
         if bmi < 18:
             bmi_category = "Malnutrition 2"
             health_effects = "Anorexia, Bulimia, Breakdown of muscle mass etc."
@@ -153,10 +171,10 @@ def health():
             health_effects = "Fatigue, Digestive problems, Circulation issues, Varicose veins"
         elif bmi <= 28.0:
             bmi_category = "Obesity Grade 1"
-            health_effects = "Diabetes, Hypertension, Joint problems, Strokes"
+            health_effects = "Diabetes, Hypertension, Joint problems (spine, knees), Strokes"
         elif bmi <= 30.0:
             bmi_category = "Obesity Grade 2"
-            health_effects = "Diabetes, Cancer, Arthritis, Heart Attacks"
+            health_effects = "Diabetes, Cancer, Arthritis, Arteriosclerosis, Heart Attacks"
         else:
             bmi_category = "Obesity Grade 3"
             health_effects = "Max risk of Diabetes, Heart Disease, Cancer, Premature Death"
@@ -219,7 +237,13 @@ def diet_plan():
 def generate_diet():
     data = request.get_json()
     report_text = data.get("report", "")
-    prompt = f"You are Wellora, a certified nutrition AI. Based on this health report, create a personalized 7-day diet plan including Indian food and calories.\n\nHealth Report:\n{report_text}"
+    prompt = f"""
+    You are Wellora, a certified nutrition AI. Based on the following health report, create a 
+    personalized 7-day diet plan including Indian food and calorie suggestions.
+
+    Health Report:
+    {report_text}
+    """
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
     payload = {"model": "openai/gpt-3.5-turbo", "messages":[{"role":"system","content":"You are a professional dietitian AI named Wellora."},{"role":"user","content":prompt}]}
     response = requests.post(API_URL, headers=headers, json=payload)
@@ -269,23 +293,24 @@ def process_exercise_frame():
         return jsonify({'error':'Not authenticated'}), 401
     data = request.json
     image_data = data['image'].split(',')[1]
+    exercise_type = data['exercise_type']
     nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    return jsonify(process_frame_with_mediapipe(frame, data['exercise_type'], session['username']))
+    return jsonify(process_frame_with_mediapipe(frame, exercise_type, session['username']))
 
 def process_frame_with_mediapipe(frame, exercise_type, username):
-    with Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
         results = pose.process(image)
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         if results.pose_landmarks:
-            draw_landmarks(image, results.pose_landmarks, POSE_CONNECTIONS)
+            mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
             reps, feedback, state = count_exercise_reps(results.pose_landmarks, exercise_type, username)
             _, buffer = cv2.imencode('.jpg', image)
             processed_image = base64.b64encode(buffer).decode('utf-8')
-            return {'reps': reps,'feedback': feedback,'landmarks_detected':True,'processed_image':f"data:image/jpeg;base64,{processed_image}",'state':state}
+            return {'reps': reps,'feedback': feedback,'landmarks_detected': True,'processed_image': f"data:image/jpeg;base64,{processed_image}",'state': state}
         return {'reps':0,'feedback':'No person detected','landmarks_detected':False,'processed_image':None,'state':'none'}
 
 # ======================
@@ -302,7 +327,7 @@ def process_hand_frame():
     return jsonify(process_hand_frame_with_mediapipe(frame, session['username']))
 
 def process_hand_frame_with_mediapipe(frame, username):
-    with Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
+    with mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
         results = hands.process(image)
@@ -311,7 +336,7 @@ def process_hand_frame_with_mediapipe(frame, username):
         hand_landmarks_list, handedness_list = [], []
         if results.multi_hand_landmarks:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-                draw_landmarks(image, hand_landmarks, hands.HAND_CONNECTIONS,get_default_hand_landmarks_style(),get_default_hand_connections_style())
+                mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
                 hand_landmarks_list.append(hand_landmarks)
                 handedness_list.append(handedness.classification[0].label)
             reps, feedback, state, hand_states = count_hand_reps(hand_landmarks_list, handedness_list, username)
