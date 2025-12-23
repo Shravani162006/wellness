@@ -5,13 +5,15 @@ import os
 import uuid
 import json
 import cv2
-import mediapipe as mp
 import numpy as np
 import base64
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()  # Load .env variables
+# ----------------------
+# Load environment variables
+# ----------------------
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'wellness123'
@@ -27,24 +29,27 @@ USER_DATA_FOLDER = "user_data"
 os.makedirs(USER_DATA_FOLDER, exist_ok=True)
 
 # ----------------------
-# MediaPipe Setup
+# Mediapipe imports (latest version)
 # ----------------------
-mp_pose = mp.solutions.pose
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
+from mediapipe.python.solutions.pose import Pose, POSE_CONNECTIONS
+from mediapipe.python.solutions.hands import Hands
+from mediapipe.python.solutions.drawing_utils import draw_landmarks, get_default_hand_landmarks_style, get_default_hand_connections_style
 
+# ----------------------
 # Exercise tracking (in-memory)
+# ----------------------
 exercise_states = {}
 
+# ----------------------
 # PDFKit configuration
+# ----------------------
 config = pdfkit.configuration(
-    wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'  # Adjust path for server
+    wkhtmltopdf=os.getenv("WKHTMLTOPDF_PATH", "/usr/local/bin/wkhtmltopdf")
 )
 
-# ----------------------
+# ======================
 # Helper functions for user data
-# ----------------------
+# ======================
 def get_user_file(username):
     return os.path.join(USER_DATA_FOLDER, f"{username}.json")
 
@@ -60,9 +65,9 @@ def save_history(username, history):
     with open(filepath, "w") as f:
         json.dump(history, f, indent=4)
 
-# ----------------------
+# ======================
 # AUTH ROUTES
-# ----------------------
+# ======================
 @app.route('/')
 def home():
     return redirect('/login')
@@ -90,14 +95,13 @@ def logout():
     session.pop('username', None)
     return redirect('/login')
 
-# ----------------------
+# ======================
 # Health Calculator
-# ----------------------
+# ======================
 @app.route('/health', methods=['GET', 'POST'])
 def health():
     if 'username' not in session:
         return redirect('/login')
-
     username = session['username']
     history = load_history(username)
 
@@ -109,7 +113,6 @@ def health():
 
         height_m = height / 100
         bmi = round(weight / (height_m ** 2), 2)
-
         if gender.lower() == 'male':
             bmr = round(10 * weight + 6.25 * height - 5 * age + 5, 2)
             mm = round(weight * 0.45, 2)
@@ -119,7 +122,6 @@ def health():
 
         ideal_bmi = 21.7
         ideal_weight = round(ideal_bmi * (height_m ** 2), 2)
-
         suggestion = (
             "Gain Weight" if weight < ideal_weight
             else "Lose Weight" if weight > ideal_weight
@@ -127,7 +129,6 @@ def health():
         )
 
         tsf = round((bmi * 0.8) + (age * 0.1), 2)
-
         if bmi < 18.5:
             vf = "Low"
         elif bmi <= 24.9:
@@ -152,53 +153,31 @@ def health():
             health_effects = "Fatigue, Digestive problems, Circulation issues, Varicose veins"
         elif bmi <= 28.0:
             bmi_category = "Obesity Grade 1"
-            health_effects = "Diabetes, Hypertension, Joint problems (spine, knees), Strokes"
+            health_effects = "Diabetes, Hypertension, Joint problems, Strokes"
         elif bmi <= 30.0:
             bmi_category = "Obesity Grade 2"
-            health_effects = "Diabetes, Cancer, Arthritis, Arteriosclerosis, Heart Attacks"
+            health_effects = "Diabetes, Cancer, Arthritis, Heart Attacks"
         else:
             bmi_category = "Obesity Grade 3"
             health_effects = "Max risk of Diabetes, Heart Disease, Cancer, Premature Death"
 
-        # Save history
         entry = {
             'date': datetime.now().strftime("%Y-%m-%d %H:%M"),
-            'gender': gender,
-            'age': age,
-            'height': height,
-            'weight': weight,
-            'bmi': bmi,
-            'bmr': bmr,
-            'tsf': tsf,
-            'vf': vf,
-            'mm': mm,
-            'ideal_weight': ideal_weight,
-            'suggestion': suggestion,
-            'bmi_category': bmi_category,
-            'health_effects': health_effects
+            'gender': gender, 'age': age, 'height': height, 'weight': weight,
+            'bmi': bmi, 'bmr': bmr, 'tsf': tsf, 'vf': vf, 'mm': mm,
+            'ideal_weight': ideal_weight, 'suggestion': suggestion,
+            'bmi_category': bmi_category, 'health_effects': health_effects
         }
         history.append(entry)
         save_history(username, history)
         flash("Health data saved successfully!")
-
-        return render_template(
-            'result.html',
-            bmi=bmi,
-            bmr=bmr,
-            tsf=tsf,
-            vf=vf,
-            mm=mm,
-            ideal_weight=ideal_weight,
-            suggestion=suggestion,
-            bmi_category=bmi_category,
-            health_effects=health_effects
-        )
+        return render_template('result.html', **entry)
 
     return render_template('health_form.html')
 
-# ----------------------
-# History & PDF Download
-# ----------------------
+# ======================
+# History & PDF
+# ======================
 @app.route('/history')
 def history_page():
     if 'username' not in session:
@@ -211,47 +190,25 @@ def history_page():
 def download_history():
     if 'username' not in session:
         return redirect('/login')
-
     username = session['username']
     records = sorted(load_history(username), key=lambda x: x['date'], reverse=True)
     if not records:
         flash("No history to download!")
         return redirect(url_for('history_page'))
-
     rendered = render_template('history_pdf.html', records=records)
     output_filename = f"health_history_{uuid.uuid4()}.pdf"
     output_path = os.path.join(os.getcwd(), output_filename)
     pdfkit.from_string(rendered, output_path, configuration=config, options={"enable-local-file-access": True})
     response = send_file(output_path, as_attachment=True)
-
     @response.call_on_close
     def cleanup():
-        try:
-            os.remove(output_path)
-        except:
-            pass
-
+        try: os.remove(output_path)
+        except: pass
     return response
 
-# ----------------------
-# Exercise Routes & MediaPipe Processing
-# ----------------------
-@app.route('/exercise')
-def exercise():
-    if 'username' not in session:
-        return redirect('/login')
-    return render_template('exercise.html')
-
-# You already have all the detailed exercise processing functions here
-# pushups, squats, bicep curls, hand workout
-# process_frame_with_mediapipe, process_hand_frame_with_mediapipe
-# count_exercise_reps, count_pushups, count_squats, count_bicep_curls, is_hand_open
-# calculate_angle
-# save_exercise_progress, exercise_history
-
-# ----------------------
+# ======================
 # Diet Plan
-# ----------------------
+# ======================
 @app.route("/diet_plan")
 def diet_plan():
     if 'username' not in session:
@@ -262,38 +219,15 @@ def diet_plan():
 def generate_diet():
     data = request.get_json()
     report_text = data.get("report", "")
-
-    prompt = f"""
-    You are Wellora, a certified nutrition AI. Based on the following health report, create a 
-    personalized 7-day diet plan that supports healthy weight loss, balanced nutrition, and 
-    energy maintenance. Include Indian food options and calorie suggestions per meal.
-
-    Health Report:
-    {report_text}
-    """
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {API_KEY}"
-    }
-
-    payload = {
-        "model": "openai/gpt-3.5-turbo",
-        "messages": [
-            {"role": "system", "content": "You are a professional dietitian AI named Wellora."},
-            {"role": "user", "content": prompt}
-        ]
-    }
-
+    prompt = f"You are Wellora, a certified nutrition AI. Based on this health report, create a personalized 7-day diet plan including Indian food and calories.\n\nHealth Report:\n{report_text}"
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    payload = {"model": "openai/gpt-3.5-turbo", "messages":[{"role":"system","content":"You are a professional dietitian AI named Wellora."},{"role":"user","content":prompt}]}
     response = requests.post(API_URL, headers=headers, json=payload)
-    if response.ok:
-        return jsonify(response.json())
-    else:
-        return jsonify({"error": "Failed to generate diet plan"}), 500
+    return jsonify(response.json()) if response.ok else jsonify({"error":"Failed to generate diet plan"}), 500
 
-# ----------------------
+# ======================
 # Recipes
-# ----------------------
+# ======================
 @app.route("/recipes", methods=["GET", "POST"])
 def recipes():
     if 'username' not in session:
@@ -301,11 +235,10 @@ def recipes():
     api_key = os.getenv("OPENROUTER_API_KEY")
     return render_template("recipe_chat.html", recipe=None, api_key=api_key)
 
-# ----------------------
+# ======================
 # Challenges
-# ----------------------
+# ======================
 challenges = []
-
 @app.route('/challenge', methods=['GET', 'POST'])
 def challenge():
     if request.method == 'POST':
@@ -314,21 +247,81 @@ def challenge():
         start_date = request.form['start_date']
         end_date = request.form['end_date']
         total_days = request.form['total_days']
-
-        challenges.append({
-            'challenge_name': challenge_name,
-            'goal': goal,
-            'start_date': start_date,
-            'end_date': end_date,
-            'total_days': total_days
-        })
-
+        challenges.append({'challenge_name': challenge_name,'goal': goal,'start_date': start_date,'end_date': end_date,'total_days': total_days})
         return redirect(url_for('challenge'))
-
     return render_template('challenge.html', challenges=challenges)
 
-# ----------------------
+# ======================
+# Exercise Pages
+# ======================
+@app.route('/exercise')
+def exercise():
+    if 'username' not in session:
+        return redirect('/login')
+    return render_template('exercise.html')
+
+# ======================
+# Pose Exercise Processing
+# ======================
+@app.route('/process_exercise_frame', methods=['POST'])
+def process_exercise_frame():
+    if 'username' not in session:
+        return jsonify({'error':'Not authenticated'}), 401
+    data = request.json
+    image_data = data['image'].split(',')[1]
+    nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    return jsonify(process_frame_with_mediapipe(frame, data['exercise_type'], session['username']))
+
+def process_frame_with_mediapipe(frame, exercise_type, username):
+    with Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image.flags.writeable = False
+        results = pose.process(image)
+        image.flags.writeable = True
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        if results.pose_landmarks:
+            draw_landmarks(image, results.pose_landmarks, POSE_CONNECTIONS)
+            reps, feedback, state = count_exercise_reps(results.pose_landmarks, exercise_type, username)
+            _, buffer = cv2.imencode('.jpg', image)
+            processed_image = base64.b64encode(buffer).decode('utf-8')
+            return {'reps': reps,'feedback': feedback,'landmarks_detected':True,'processed_image':f"data:image/jpeg;base64,{processed_image}",'state':state}
+        return {'reps':0,'feedback':'No person detected','landmarks_detected':False,'processed_image':None,'state':'none'}
+
+# ======================
+# Hand Exercise Processing
+# ======================
+@app.route('/process_hand_frame', methods=['POST'])
+def process_hand_frame():
+    if 'username' not in session:
+        return jsonify({'error':'Not authenticated'}), 401
+    data = request.json
+    image_data = data['image'].split(',')[1]
+    nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    return jsonify(process_hand_frame_with_mediapipe(frame, session['username']))
+
+def process_hand_frame_with_mediapipe(frame, username):
+    with Hands(static_image_mode=False, max_num_hands=2, min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image.flags.writeable = False
+        results = hands.process(image)
+        image.flags.writeable = True
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        hand_landmarks_list, handedness_list = [], []
+        if results.multi_hand_landmarks:
+            for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                draw_landmarks(image, hand_landmarks, hands.HAND_CONNECTIONS,get_default_hand_landmarks_style(),get_default_hand_connections_style())
+                hand_landmarks_list.append(hand_landmarks)
+                handedness_list.append(handedness.classification[0].label)
+            reps, feedback, state, hand_states = count_hand_reps(hand_landmarks_list, handedness_list, username)
+            _, buffer = cv2.imencode('.jpg', image)
+            processed_image = base64.b64encode(buffer).decode('utf-8')
+            return {'reps':reps,'feedback':feedback,'hands_detected':True,'processed_image':f"data:image/jpeg;base64,{processed_image}",'state':state,'hand_states':hand_states}
+        return {'reps':0,'feedback':'No hands detected','hands_detected':False,'processed_image':None,'state':'none','hand_states':{}}
+
+# ======================
 # Run App
-# ----------------------
+# ======================
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
