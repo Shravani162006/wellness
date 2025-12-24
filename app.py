@@ -102,6 +102,7 @@ def login():
 def health():
     if 'username' not in session:
         return redirect('/login')
+
     username = session['username']
     history = load_history(username)
 
@@ -182,28 +183,32 @@ def health():
         history.append(entry)
         save_history(username, history)
 
-        flash("Health data saved successfully!")
+        # ✅ SAVE RESULT IN SESSION
+        session['last_result'] = {
+            'bmi': bmi,
+            'bmr': bmr,
+            'tsf': tsf,
+            'vf': vf,
+            'mm': mm,
+            'ideal_weight': ideal_weight,
+            'suggestion': suggestion,
+            'bmi_category': bmi_category,
+            'health_effects': health_effects
+        }
 
-        return render_template(
-            'result.html',
-            bmi=bmi,
-            bmr=bmr,
-            tsf=tsf,
-            vf=vf,
-            mm=mm,
-            ideal_weight=ideal_weight,
-            suggestion=suggestion,
-            bmi_category=bmi_category,
-            health_effects=health_effects
-        )
+        flash("Health data saved successfully!")
+        return redirect(url_for('result'))
 
     return render_template('health_form.html')
+
+
 @app.route('/result')
 def result():
     if 'username' not in session or 'last_result' not in session:
         return redirect('/health')
 
     return render_template('result.html', **session['last_result'])
+
 
 
 # ======================
