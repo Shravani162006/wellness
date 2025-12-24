@@ -5,7 +5,7 @@ import os
 import uuid
 import json
 import cv2
-import mediapipe as mp
+
 import numpy as np
 import base64
 from flask import Flask, render_template, request, jsonify
@@ -16,6 +16,9 @@ from dotenv import load_dotenv
 load_dotenv()  # Load .env variables
 
 app = Flask(__name__)
+app.secret_key = 'wellness123'
+app.permanent_session_lifetime = timedelta(minutes=30)
+
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -52,10 +55,17 @@ def save_history(username, history):
 # ======================
 # MediaPipe Setup
 # ======================
-mp_pose = mp.solutions.pose
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
+try:
+    import mediapipe as mp
+    mp_pose = mp.solutions.pose
+    mp_hands = mp.solutions.hands
+    mp_drawing = mp.solutions.drawing_utils
+    mp_drawing_styles = mp.solutions.drawing_styles
+    MEDIAPIPE_AVAILABLE = True
+except Exception as e:
+    print("Mediapipe disabled:", e)
+    MEDIAPIPE_AVAILABLE = False
+
 
 # ======================
 # Exercise Tracking (IN-MEMORY)
@@ -65,9 +75,11 @@ exercise_states = {}
 # ======================
 # PDFKit Config
 # ======================
-config = pdfkit.configuration(
-    wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-)
+try:
+    config = pdfkit.configuration()
+except:
+    config = None
+
 
 # ======================
 # AUTH ROUTES (NO DATABASE)
@@ -229,6 +241,10 @@ def download_history():
     rendered = render_template('history_pdf.html', records=records)
     output_filename = f"health_history_{uuid.uuid4()}.pdf"
     output_path = os.path.join(os.getcwd(), output_filename)
+    if not config:
+    flash("PDF download not available on server")
+    return redirect(url_for('history'))
+
     pdfkit.from_string(rendered, output_path, configuration=config, options={"enable-local-file-access": True})
     response = send_file(output_path, as_attachment=True)
 
@@ -305,10 +321,15 @@ def reset_exercise():
 # ======================
 # Pose Exercise Processing
 # ======================
-@app.route('/process_exercise_frame', methods=['POST'])
-def process_exercise_frame():
+@app.route('/process_hand_frame', methods=['POST'])
+def process_hand_frame():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
+
+    if not MEDIAPIPE_AVAILABLE:
+        return jsonify({
+            "error": "Hand tracking not supported on server"
+        }), 503
     
     data = request.json
     image_data = data['image']
@@ -473,8 +494,15 @@ def calculate_angle(a, b, c):
 # ======================
 @app.route('/process_hand_frame', methods=['POST'])
 def process_hand_frame():
+    # 1️⃣ Auth check (keep)
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
+
+    # 2️⃣ ADD THIS BLOCK (HERE ⬇️)
+    if not MEDIAPIPE_AVAILABLE:
+        return jsonify({
+            "error": "Hand tracking not supported on server"
+        }), 503
     
     data = request.json
     image_data = data['image']
@@ -739,6 +767,7 @@ def health_info():
     if 'username' not in session:
         return redirect('/login')
     return render_template('health_info.html')
+
 
 @app.route('/measure_height')
 def measure_height():
