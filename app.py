@@ -65,10 +65,13 @@ exercise_states = {}
 # ======================
 # PDFKit Config
 # ======================
-try:
-    config = pdfkit.configuration()
-except:
+WKHTMLTOPDF_PATH = os.getenv("WKHTMLTOPDF_PATH")
+
+if WKHTMLTOPDF_PATH:
+    config = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_PATH)
+else:
     config = None
+
 
 # ======================
 # AUTH ROUTES
@@ -222,37 +225,28 @@ def history():
     records = sorted(load_history(username), key=lambda x: x['date'], reverse=True)
     return render_template('history.html', records=records)
 
+from weasyprint import HTML
+
 @app.route('/download_history')
 def download_history():
     if 'username' not in session:
         return redirect('/login')
 
     username = session['username']
-    records = sorted(load_history(username), key=lambda x: x['date'], reverse=True)
+    records = load_history(username)
 
     if not records:
         flash("No history to download!")
         return redirect(url_for('history'))
 
-    rendered = render_template('history_pdf.html', records=records)
-    output_filename = f"health_history_{uuid.uuid4()}.pdf"
-    output_path = os.path.join(os.getcwd(), output_filename)
+    html = render_template('history_pdf.html', records=records)
+    pdf = HTML(string=html).write_pdf()
 
-    if not config:
-        flash("PDF download not available on server")
-        return redirect(url_for('history'))
-
-    pdfkit.from_string(rendered, output_path, configuration=config, options={"enable-local-file-access": True})
-    response = send_file(output_path, as_attachment=True)
-
-    @response.call_on_close
-    def cleanup():
-        try:
-            os.remove(output_path)
-        except:
-            pass
-
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=health_history.pdf'
     return response
+
 
 # ======================
 # Logout
