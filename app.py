@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, jsonify, flash
 from datetime import timedelta, datetime
-import pdfkit
+
 import os
 import uuid
 import json
@@ -228,24 +228,14 @@ def history():
 from weasyprint import HTML
 
 @app.route('/download_history')
+@app.route('/download_history')
 def download_history():
     if 'username' not in session:
         return redirect('/login')
 
-    username = session['username']
-    records = load_history(username)
+    flash("⚠ PDF download is temporarily disabled on the deployed server.")
+    return redirect(url_for('history'))
 
-    if not records:
-        flash("No history to download!")
-        return redirect(url_for('history'))
-
-    html = render_template('history_pdf.html', records=records)
-    pdf = HTML(string=html).write_pdf()
-
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'attachment; filename=health_history.pdf'
-    return response
 
 
 # ======================
