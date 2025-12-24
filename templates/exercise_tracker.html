@@ -1,197 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ exercise_type.title() }} Tracker</title>
-   <link rel="stylesheet" href="{{ url_for('static', filename='exercise_tracker.css') }}">
+  <title>Exercise Tracker</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+
 </head>
 <body>
-    <div class="container">
-        <div class="nav-bar">
-            <h1>🎯 {{ exercise_type.title() }} Tracker</h1>
-            <div class="nav-links">
-                <a href="/exercise">← Back to Exercises</a>
-                <a href="/exercise_history">History</a>
-                <a href="/health">Health</a>
-            </div>
-        </div>
 
-        <div class="video-container">
-            <video id="webcam" autoplay playsinline></video>
-            <canvas id="canvas" width="640" height="480"></canvas>
-        </div>
-        
-        <div class="stats">
-            <div class="counter">Reps: <span id="rep-counter">0</span></div>
-            <div class="feedback" id="feedback">Click Start to begin tracking</div>
-            <div>Status: <span id="state-display">Ready</span></div>
-        </div>
-        
-        <div class="controls">
-            <button id="start-btn" onclick="startExercise()">Start Exercise</button>
-            <button id="stop-btn" onclick="stopExercise()" disabled>Stop Exercise</button>
-            <button id="reset-btn" onclick="resetExercise()">Reset Counter</button>
-            <button id="save-btn" onclick="saveProgress()">Save Progress</button>
-        </div>
+<h2>{{ exercise_type|capitalize }}</h2>
+<h1 id="count">0</h1>
+<video id="video" style="display:none"></video>
+<canvas id="canvas" width="640" height="480"></canvas>
 
-        <div style="text-align: center; margin-top: 20px;">
-            <p><strong>Instructions:</strong> Make sure you are visible in the camera and follow the form feedback.</p>
-        </div>
-    </div>
+<button onclick="save()">Save Workout</button>
 
-    <script>
-        let repCount = 0;
-        let exerciseActive = false;
-        let processing = false;
-        const exerciseType = '{{ exercise_type }}';
-        
-        async function startExercise() {
-            exerciseActive = true;
-            repCount = 0;
-            updateDisplay();
-            document.getElementById('start-btn').disabled = true;
-            document.getElementById('stop-btn').disabled = false;
-            document.getElementById('feedback').textContent = 'Initializing camera...';
-            
-            await initCamera();
-            processVideo();
-        }
-        
-        function stopExercise() {
-            exerciseActive = false;
-            document.getElementById('start-btn').disabled = false;
-            document.getElementById('stop-btn').disabled = true;
-            document.getElementById('feedback').textContent = 'Exercise stopped';
-            document.getElementById('state-display').textContent = 'Stopped';
-        }
-        
-        function updateDisplay() {
-            document.getElementById('rep-counter').textContent = repCount;
-        }
-        
-        async function initCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 640, height: 480 } 
-                });
-                const video = document.getElementById('webcam');
-                video.srcObject = stream;
-                video.style.display = 'block';
-                
-                return new Promise((resolve) => {
-                    video.onloadedmetadata = () => {
-                        resolve();
-                    };
-                });
-            } catch (error) {
-                console.error('Error accessing camera:', error);
-                document.getElementById('feedback').textContent = 'Error accessing camera. Please allow camera permissions.';
-            }
-        }
-        
-        async function processVideo() {
-            const video = document.getElementById('webcam');
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            async function processFrame() {
-                if (!exerciseActive || processing) return;
-                
-                processing = true;
-                
-                // Draw video frame to canvas
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // Convert canvas to base64
-                const imageData = canvas.toDataURL('image/jpeg');
-                
-                try {
-                    const response = await fetch('/process_exercise_frame', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            image: imageData,
-                            exercise_type: exerciseType
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.landmarks_detected) {
-                        repCount = result.reps;
-                        document.getElementById('feedback').textContent = result.feedback;
-                        document.getElementById('state-display').textContent = result.state;
-                        
-                        // Draw processed image if available
-                        if (result.processed_image) {
-                            const img = new Image();
-                            img.onload = function() {
-                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            };
-                            img.src = result.processed_image;
-                        }
-                    } else {
-                        document.getElementById('feedback').textContent = result.feedback;
-                    }
-                    
-                    updateDisplay();
-                } catch (error) {
-                    console.error('Error processing frame:', error);
-                }
-                
-                processing = false;
-                
-                if (exerciseActive) {
-                    requestAnimationFrame(processFrame);
-                }
-            }
-            
-            processFrame();
-        }
-        
-        async function saveProgress() {
-            try {
-                const response = await fetch('/save_exercise_progress', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        exercise_type: exerciseType,
-                        reps: repCount,
-                        date: new Date().toISOString()
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    alert(`Progress saved! ${repCount} reps recorded.`);
-                }
-            } catch (error) {
-                console.error('Error saving progress:', error);
-                alert('Error saving progress. Please try again.');
-            }
-        }
+<script>
+let count = 0, state = "up";
 
-        async function resetExercise() {
-            try {
-                const response = await fetch('/reset_exercise', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        exercise_type: exerciseType
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    repCount = 0;
-                    updateDisplay();
-                    document.getElementById('feedback').textContent = 'Counter reset to 0';
-                    alert('Exercise counter has been reset to 0!');
-                }
-            } catch (error) {
-                console.error('Error resetting exercise:', error);
-                alert('Error resetting counter. Please try again.');
-            }
-        }
-    </script>
+const pose = new Pose({
+  locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+});
+
+pose.setOptions({
+  modelComplexity: 1,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
+});
+
+pose.onResults(results => {
+  if (!results.poseLandmarks) return;
+
+  const a = results.poseLandmarks[11];
+  const b = results.poseLandmarks[13];
+  const c = results.poseLandmarks[15];
+
+  const angle = Math.abs(
+    Math.atan2(c.y - b.y, c.x - b.x) -
+    Math.atan2(a.y - b.y, a.x - b.x)
+  ) * 180 / Math.PI;
+
+  if (angle < 90) state = "down";
+  if (angle > 160 && state === "down") {
+    count++;
+    state = "up";
+    document.getElementById("count").innerText = count;
+  }
+});
+
+const camera = new Camera(document.getElementById("video"), {
+  onFrame: async () => await pose.send({image: video}),
+  width: 640,
+  height: 480
+});
+camera.start();
+
+function save(){
+  fetch("/save_exercise_progress", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      exercise:"{{ exercise_type }}",
+      reps: count
+    })
+  }).then(()=>alert("Saved"));
+}
+</script>
+
 </body>
 </html>
