@@ -198,6 +198,13 @@ def health():
         )
 
     return render_template('health_form.html')
+@app.route('/result')
+def result():
+    if 'username' not in session or 'last_result' not in session:
+        return redirect('/health')
+
+    return render_template('result.html', **session['last_result'])
+
 
 # ======================
 # History & Download Routes
