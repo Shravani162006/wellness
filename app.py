@@ -4,8 +4,7 @@ from datetime import timedelta, datetime
 import os
 import uuid
 import json
-import cv2
-import numpy as np
+
 import base64
 import requests
 from dotenv import load_dotenv
@@ -47,7 +46,7 @@ def save_history(username, history):
 # MediaPipe Setup
 # ======================
 try:
-    import mediapipe as mp
+    
     mp_pose = mp.solutions.pose
     mp_hands = mp.solutions.hands
     mp_drawing = mp.solutions.drawing_utils
@@ -474,33 +473,23 @@ def process_hand_frame():
 # ======================
 # Exercise Progress Saving
 # ======================
-@app.route('/save_exercise_progress', methods=['POST'])
+@app.route("/save_exercise_progress", methods=["POST"])
 def save_exercise_progress():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if "username" not in session:
+        return jsonify({"error": "Not logged in"}), 401
 
     data = request.json
-    username = session['username']
-    exercise_history = load_history(username)
+    history = load_history(session["username"])
 
-    workout_date = data.get('date')
-    if workout_date:
-        try:
-            workout_date = datetime.strptime(workout_date, "%Y-%m-%d %H:%M").strftime("%Y-%m-%d %H:%M")
-        except:
-            workout_date = datetime.now().strftime("%Y-%m-%d %H:%M")
-    else:
-        workout_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+    history.append({
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "exercise": data["exercise"],
+        "reps": data["reps"]
+    })
 
-    entry = {
-        'date': workout_date,
-        'exercise_type': data['exercise_type'],
-        'reps': data['reps']
-    }
-    exercise_history.append(entry)
-    save_history(username, exercise_history)
+    save_history(session["username"], history)
+    return jsonify({"success": True})
 
-    return jsonify({'success': True, 'message': 'Exercise progress saved!'})
 
 @app.route('/exercise_history')
 def exercise_history():
