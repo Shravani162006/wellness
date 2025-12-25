@@ -80,12 +80,7 @@ else:
 def home():
     return redirect('/login')
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        session['username'] = request.form['username']
-        return redirect('/health')
-    return render_template('signup.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
