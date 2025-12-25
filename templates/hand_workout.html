@@ -1,21 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Hand Workout Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='hand_workout.css') }}">
-
-    <!-- MediaPipe Hands -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <style>
+        video, canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .video-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            margin: auto;
+        }
+    </style>
 </head>
-
 <body>
+
 <div class="container">
     <div class="nav-bar">
         <h1>✋ Hand Workout Tracker</h1>
         <div class="nav-links">
-            <a href="/exercise">← Back to Exercises</a>
+            <a href="/exercise">← Back</a>
             <a href="/exercise_history">History</a>
             <a href="/health">Health</a>
         </div>
@@ -28,116 +37,124 @@
 
     <div class="stats">
         <div class="counter">Reps: <span id="rep-counter">0</span></div>
-        <div class="hand-states">
-            <div class="hand-state">Left: <span id="left-hand-state">-</span></div>
-            <div class="hand-state">Right: <span id="right-hand-state">-</span></div>
-        </div>
-        <div class="feedback" id="feedback">Click Start to begin</div>
-        <div>Status: <span id="state-display">Ready</span></div>
+        <div>State: <span id="state-display">Waiting</span></div>
+        <div class="feedback" id="feedback">Show your hand to the camera</div>
     </div>
 
     <div class="controls">
-        <button onclick="startExercise()">Start</button>
-        <button onclick="stopExercise()">Stop</button>
-        <button onclick="resetExercise()">Reset</button>
+        <button onclick="resetReps()">Reset</button>
         <button onclick="saveProgress()">Save</button>
     </div>
 </div>
 
-<script>
-let reps = 0;
-let running = false;
-let prevState = { Left: "open", Right: "open" };
+<!-- ✅ MediaPipe CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
+<script>
 const video = document.getElementById("webcam");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-function distance(a, b) {
-    return Math.hypot(a.x - b.x, a.y - b.y);
-}
+let reps = 0;
+let prevState = "open";
 
-function isHandOpen(landmarks) {
-    const tip = landmarks[8];
-    const mcp = landmarks[5];
-    return distance(tip, mcp) > 0.07;
-}
-
+// ======================
+// MediaPipe Hands Setup
+// ======================
 const hands = new Hands({
-    locateFile: file =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+  locateFile: file =>
+    `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 
 hands.setOptions({
-    maxNumHands: 2,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7
+  maxNumHands: 2,
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.7
 });
 
+// ======================
+// Hand Detection Results
+// ======================
 hands.onResults(results => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
-    if (!running || !results.multiHandLandmarks) return;
+  if (!results.multiHandLandmarks) {
+    document.getElementById("state-display").textContent = "No hands";
+    return;
+  }
 
-    results.multiHandLandmarks.forEach((landmarks, i) => {
-        const label = results.multiHandedness[i].classification[0].label;
-        const state = isHandOpen(landmarks) ? "open" : "closed";
-
-        if (prevState[label] === "closed" && state === "open") {
-            reps++;
-            document.getElementById("rep-counter").innerText = reps;
-        }
-
-        prevState[label] = state;
-        document.getElementById(label === "Left" ? "left-hand-state" : "right-hand-state").innerText = state;
-
-        drawConnectors(ctx, landmarks, HAND_CONNECTIONS);
-        drawLandmarks(ctx, landmarks);
+  for (const landmarks of results.multiHandLandmarks) {
+    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+      color: "#00FF00",
+      lineWidth: 2
     });
+    drawLandmarks(ctx, landmarks, {
+      color: "#FF0000",
+      radius: 4
+    });
+  }
+
+  const isOpen = isHandOpen(results.multiHandLandmarks[0]);
+  const currentState = isOpen ? "open" : "closed";
+
+  document.getElementById("state-display").textContent = currentState;
+
+  if (currentState !== prevState) {
+    reps++;
+    document.getElementById("rep-counter").textContent = reps;
+    document.getElementById("feedback").textContent = `Hand ${currentState}`;
+    prevState = currentState;
+  }
 });
 
-let camera;
-function startExercise() {
-    reps = 0;
-    running = true;
-    document.getElementById("feedback").innerText = "Tracking...";
-    document.getElementById("state-display").innerText = "Running";
-
-    camera = new Camera(video, {
-        onFrame: async () => {
-            await hands.send({ image: video });
-        },
-        width: 640,
-        height: 480
-    });
-    camera.start();
+// ======================
+// Simple Hand Open Logic
+// ======================
+function isHandOpen(landmarks) {
+  // Index finger tip above PIP joint = open
+  return landmarks[8].y < landmarks[6].y;
 }
 
-function stopExercise() {
-    running = false;
-    document.getElementById("state-display").innerText = "Stopped";
-    if (camera) camera.stop();
+// ======================
+// Camera Start
+// ======================
+const camera = new Camera(video, {
+  onFrame: async () => {
+    await hands.send({ image: video });
+  },
+  width: 640,
+  height: 480
+});
+
+camera.start();
+
+// ======================
+// Controls
+// ======================
+function resetReps() {
+  reps = 0;
+  prevState = "open";
+  document.getElementById("rep-counter").textContent = 0;
+  document.getElementById("feedback").textContent = "Counter reset";
 }
 
-function resetExercise() {
-    reps = 0;
-    prevState = { Left: "open", Right: "open" };
-    document.getElementById("rep-counter").innerText = 0;
-}
-
-async function saveProgress() {
-    const res = await fetch("/save_exercise_progress", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            exercise_type: "hand_workout",
-            reps: reps
-        })
-    });
-
-    if (res.ok) alert("Progress saved!");
+function saveProgress() {
+  fetch("/save_exercise_progress", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      exercise_type: "hand_workout",
+      reps: reps
+    })
+  })
+  .then(res => res.json())
+  .then(() => alert("Progress saved!"))
+  .catch(() => alert("Save failed"));
 }
 </script>
+
 </body>
 </html>
