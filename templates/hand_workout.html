@@ -1,160 +1,210 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Hand Workout Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='hand_workout.css') }}">
-    <style>
-        video, canvas {
-            position: absolute;
-            left: 0;
-            top: 0;
-        }
-        .video-container {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            margin: auto;
-        }
-    </style>
+      <link rel="stylesheet" href="{{ url_for('static', filename='hand_workout.css') }}">
 </head>
 <body>
+    <div class="container">
+        <div class="nav-bar">
+            <h1>✋ Hand Workout Tracker</h1>
+            <div class="nav-links">
+                <a href="/exercise">← Back to Exercises</a>
+                <a href="/exercise_history">History</a>
+                <a href="/health">Health</a>
+            </div>
+        </div>
 
-<div class="container">
-    <div class="nav-bar">
-        <h1>✋ Hand Workout Tracker</h1>
-        <div class="nav-links">
-            <a href="/exercise">← Back</a>
-            <a href="/exercise_history">History</a>
-            <a href="/health">Health</a>
+        <div class="video-container">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+        
+        <div class="stats">
+            <div class="counter">Reps: <span id="rep-counter">0</span></div>
+            <div class="hand-states">
+                <div class="hand-state">Left: <span id="left-hand-state">-</span></div>
+                <div class="hand-state">Right: <span id="right-hand-state">-</span></div>
+            </div>
+            <div class="feedback" id="feedback">Click Start to begin tracking</div>
+            <div>Status: <span id="state-display">Ready</span></div>
+        </div>
+        
+        <div class="controls">
+            <button id="start-btn" onclick="startExercise()">Start Exercise</button>
+            <button id="stop-btn" onclick="stopExercise()" disabled>Stop Exercise</button>
+            <button id="reset-btn" onclick="resetExercise()">Reset Counter</button>
+            <button id="save-btn" onclick="saveProgress()">Save Progress</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <h3>How it works:</h3>
+            <p><strong>1 rep = Open → Close → Open OR Close → Open → Close</strong></p>
+            <p>Show your hands to the camera and make fist/open hand motions.</p>
+            <p>Each complete cycle (open→close→open or close→open→close) counts as 1 rep.</p>
         </div>
     </div>
 
-    <div class="video-container">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="canvas" width="640" height="480"></canvas>
-    </div>
+    <script>
+        let repCount = 0;
+        let exerciseActive = false;
+        let processing = false;
+        
+        async function startExercise() {
+            exerciseActive = true;
+            repCount = 0;
+            updateDisplay();
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+            document.getElementById('feedback').textContent = 'Initializing camera...';
+            
+            await initCamera();
+            processVideo();
+        }
+        
+        function stopExercise() {
+            exerciseActive = false;
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            document.getElementById('feedback').textContent = 'Exercise stopped';
+            document.getElementById('state-display').textContent = 'Stopped';
+        }
+        
+        function updateDisplay() {
+            document.getElementById('rep-counter').textContent = repCount;
+        }
+        
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                const video = document.getElementById('webcam');
+                video.srcObject = stream;
+                video.style.display = 'block';
+                
+                return new Promise((resolve) => {
+                    video.onloadedmetadata = () => {
+                        resolve();
+                    };
+                });
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                document.getElementById('feedback').textContent = 'Error accessing camera. Please allow camera permissions.';
+            }
+        }
+        
+        async function processVideo() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            async function processFrame() {
+                if (!exerciseActive || processing) return;
+                
+                processing = true;
+                
+                // Draw video frame to canvas
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convert canvas to base64
+                const imageData = canvas.toDataURL('image/jpeg');
+                
+                try {
+                    const response = await fetch('/process_hand_frame', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image: imageData
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.hands_detected) {
+                        repCount = result.reps;
+                        document.getElementById('feedback').textContent = result.feedback;
+                        document.getElementById('state-display').textContent = result.state;
+                        
+                        // Update hand states
+                        if (result.hand_states) {
+                            document.getElementById('left-hand-state').textContent = result.hand_states.Left || '-';
+                            document.getElementById('right-hand-state').textContent = result.hand_states.Right || '-';
+                        }
+                        
+                        // Draw processed image if available
+                        if (result.processed_image) {
+                            const img = new Image();
+                            img.onload = function() {
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            };
+                            img.src = result.processed_image;
+                        }
+                    } else {
+                        document.getElementById('feedback').textContent = result.feedback;
+                        document.getElementById('left-hand-state').textContent = '-';
+                        document.getElementById('right-hand-state').textContent = '-';
+                    }
+                    
+                    updateDisplay();
+                } catch (error) {
+                    console.error('Error processing frame:', error);
+                }
+                
+                processing = false;
+                
+                if (exerciseActive) {
+                    requestAnimationFrame(processFrame);
+                }
+            }
+            
+            processFrame();
+        }
+        
+        async function saveProgress() {
+            try {
+                const response = await fetch('/save_exercise_progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        exercise_type: 'hand_workout',
+                        reps: repCount,
+                        date: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert(`Progress saved! ${repCount} hand reps recorded.`);
+                }
+            } catch (error) {
+                console.error('Error saving progress:', error);
+                alert('Error saving progress. Please try again.');
+            }
+        }
 
-    <div class="stats">
-        <div class="counter">Reps: <span id="rep-counter">0</span></div>
-        <div>State: <span id="state-display">Waiting</span></div>
-        <div class="feedback" id="feedback">Show your hand to the camera</div>
-    </div>
-
-    <div class="controls">
-        <button onclick="resetReps()">Reset</button>
-        <button onclick="saveProgress()">Save</button>
-    </div>
-</div>
-
-<!-- ✅ MediaPipe CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
-<script>
-const video = document.getElementById("webcam");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-let reps = 0;
-let prevState = "open";
-
-// ======================
-// MediaPipe Hands Setup
-// ======================
-const hands = new Hands({
-  locateFile: file =>
-    `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-});
-
-hands.setOptions({
-  maxNumHands: 2,
-  minDetectionConfidence: 0.7,
-  minTrackingConfidence: 0.7
-});
-
-// ======================
-// Hand Detection Results
-// ======================
-hands.onResults(results => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-  if (!results.multiHandLandmarks) {
-    document.getElementById("state-display").textContent = "No hands";
-    return;
-  }
-
-  for (const landmarks of results.multiHandLandmarks) {
-    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
-      color: "#00FF00",
-      lineWidth: 2
-    });
-    drawLandmarks(ctx, landmarks, {
-      color: "#FF0000",
-      radius: 4
-    });
-  }
-
-  const isOpen = isHandOpen(results.multiHandLandmarks[0]);
-  const currentState = isOpen ? "open" : "closed";
-
-  document.getElementById("state-display").textContent = currentState;
-
-  if (currentState !== prevState) {
-    reps++;
-    document.getElementById("rep-counter").textContent = reps;
-    document.getElementById("feedback").textContent = `Hand ${currentState}`;
-    prevState = currentState;
-  }
-});
-
-// ======================
-// Simple Hand Open Logic
-// ======================
-function isHandOpen(landmarks) {
-  // Index finger tip above PIP joint = open
-  return landmarks[8].y < landmarks[6].y;
-}
-
-// ======================
-// Camera Start
-// ======================
-const camera = new Camera(video, {
-  onFrame: async () => {
-    await hands.send({ image: video });
-  },
-  width: 640,
-  height: 480
-});
-
-camera.start();
-
-// ======================
-// Controls
-// ======================
-function resetReps() {
-  reps = 0;
-  prevState = "open";
-  document.getElementById("rep-counter").textContent = 0;
-  document.getElementById("feedback").textContent = "Counter reset";
-}
-
-function saveProgress() {
-  fetch("/save_exercise_progress", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      exercise_type: "hand_workout",
-      reps: reps
-    })
-  })
-  .then(res => res.json())
-  .then(() => alert("Progress saved!"))
-  .catch(() => alert("Save failed"));
-}
-</script>
-
+        async function resetExercise() {
+            try {
+                const response = await fetch('/reset_exercise', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        exercise_type: 'hand_workout'
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    repCount = 0;
+                    updateDisplay();
+                    document.getElementById('feedback').textContent = 'Counter reset to 0';
+                    alert('Exercise counter has been reset to 0!');
+                }
+            } catch (error) {
+                console.error('Error resetting exercise:', error);
+                alert('Error resetting counter. Please try again.');
+            }
+        }
+    </script>
 </body>
 </html>
