@@ -4,9 +4,7 @@ from datetime import timedelta, datetime
 import os
 import uuid
 import json
-import cv2
-import numpy as np
-import base64
+
 import requests
 from dotenv import load_dotenv
 
@@ -46,16 +44,7 @@ def save_history(username, history):
 # ======================
 # MediaPipe Setup
 # ======================
-try:
-    import mediapipe as mp
-    mp_pose = mp.solutions.pose
-    mp_hands = mp.solutions.hands
-    mp_drawing = mp.solutions.drawing_utils
-    mp_drawing_styles = mp.solutions.drawing_styles
-    MEDIAPIPE_AVAILABLE = True
-except Exception as e:
-    print("Mediapipe disabled:", e)
-    MEDIAPIPE_AVAILABLE = False
+
 
 # ======================
 # Exercise Tracking (IN-MEMORY)
@@ -459,158 +448,7 @@ def calculate_angle(a, b, c):
 # ======================
 # Hand Exercise Processing
 # ======================
-@app.route('/process_hand_frame', methods=['POST'])
-def process_hand_frame():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
-    
-    data = request.json
-    image_data = data['image']
-    
-    # Convert base64 image to OpenCV format
-    image_data = image_data.split(',')[1]
-    nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
-    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    # Process frame with MediaPipe Hands
-    result = process_hand_frame_with_mediapipe(frame, session['username'])
-    
-    return jsonify(result)
 
-def process_hand_frame_with_mediapipe(frame, username):
-    with mp_hands.Hands(
-        static_image_mode=False,
-        max_num_hands=2,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5) as hands:
-        
-        # Convert BGR to RGB
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image.flags.writeable = False
-        
-        # Make detection
-        results = hands.process(image)
-        
-        # Convert back to BGR for rendering
-        image.flags.writeable = True
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        
-        hand_landmarks_list = []
-        handedness_list = []
-        
-        if results.multi_hand_landmarks:
-            for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-                # Draw hand landmarks
-                mp_drawing.draw_landmarks(
-                    image,
-                    hand_landmarks,
-                    mp_hands.HAND_CONNECTIONS,
-                    mp_drawing_styles.get_default_hand_landmarks_style(),
-                    mp_drawing_styles.get_default_hand_connections_style())
-                
-                hand_landmarks_list.append(hand_landmarks)
-                handedness_list.append(handedness.classification[0].label)
-            
-            # Count hand reps
-            reps, feedback, state, hand_states = count_hand_reps(hand_landmarks_list, handedness_list, username)
-            
-            # Convert processed image back to base64
-            _, buffer = cv2.imencode('.jpg', image)
-            processed_image = base64.b64encode(buffer).decode('utf-8')
-            
-            return {
-                'reps': reps,
-                'feedback': feedback,
-                'hands_detected': True,
-                'processed_image': f"data:image/jpeg;base64,{processed_image}",
-                'state': state,
-                'hand_states': hand_states
-            }
-        
-        return {
-            'reps': 0,
-            'feedback': 'No hands detected - show your hands to the camera',
-            'hands_detected': False,
-            'processed_image': None,
-            'state': 'none',
-            'hand_states': {}
-        }
-
-def count_hand_reps(hand_landmarks_list, handedness_list, username):
-    user_key = f"{username}_hand_workout"
-    
-    if user_key not in exercise_states:
-        exercise_states[user_key] = {
-            'count': 0,
-            'state': 'open',
-            'prev_state': 'open',
-            'threshold': 0.5
-        }
-    
-    state = exercise_states[user_key]
-    hand_states = {}
-    
-    if not hand_landmarks_list:
-        return state['count'], "Show your hands to the camera", state['state'], hand_states
-    
-    # Analyze each hand
-    for i, (hand_landmarks, handedness) in enumerate(zip(hand_landmarks_list, handedness_list)):
-        is_open = is_hand_open(hand_landmarks)
-        hand_states[handedness] = 'open' if is_open else 'closed'
-    
-    # Determine overall state (use first hand or combine logic)
-    if hand_landmarks_list:
-        main_hand_open = is_hand_open(hand_landmarks_list[0])
-        current_state = 'open' if main_hand_open else 'closed'
-        
-        # Count reps: open → closed → open OR closed → open → closed
-        if current_state != state['prev_state']:
-            if state['prev_state'] != state['state']:  # We've completed a cycle
-                state['count'] += 1
-                state['state'] = current_state
-                feedback = f"Rep #{state['count']} completed! Hand is {current_state}"
-            else:
-                feedback = f"Hand is {current_state} - continue the motion"
-            
-            state['prev_state'] = current_state
-        else:
-            feedback = f"Keep going - hand is {current_state}"
-    else:
-        feedback = "No hand state detected"
-        current_state = 'none'
-    
-    return state['count'], feedback, current_state, hand_states
-
-def is_hand_open(hand_landmarks):
-    """
-    Determine if hand is open or closed based on finger positions
-    Returns True if hand is open, False if closed
-    """
-    # Get key landmarks
-    thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-    index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
-    middle_tip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
-    ring_tip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
-    pinky_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
-    
-    thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
-    index_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
-    middle_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
-    
-    # Calculate distances from finger tips to their MCP joints
-    def distance(landmark1, landmark2):
-        return ((landmark1.x - landmark2.x)**2 + (landmark1.y - landmark2.y)**2)**0.5
-    
-    # Check if fingers are extended (open)
-    index_extended = distance(index_tip, index_mcp) > distance(thumb_tip, thumb_mcp) * 1.5
-    middle_extended = distance(middle_tip, middle_mcp) > distance(thumb_tip, thumb_mcp) * 1.5
-    ring_extended = distance(ring_tip, index_mcp) > distance(thumb_tip, thumb_mcp) * 1.2
-    pinky_extended = distance(pinky_tip, index_mcp) > distance(thumb_tip, thumb_mcp) * 1.2
-    
-    # Simple logic: hand is open if most fingers are extended
-    extended_fingers = sum([index_extended, middle_extended, ring_extended, pinky_extended])
-    
-    return extended_fingers >= 3
 
 
 # ======================
